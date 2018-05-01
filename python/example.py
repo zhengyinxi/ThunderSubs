@@ -1,42 +1,64 @@
 import thunder_subs
+import os
+import requests
+import pathlib
 
-# 获取一个本地电影文件名为cid的hash值
-cid = thunder_subs.cid_hash_file(
-    r"E:\电影\神秘博士 第6季\Doctor.Who.2005.Christmas.Special.2011.The.Doctor.The.Widow.And.The.Wardrobe.720p.HDTV.x264-FoV.mkv")
+#define parent path of media path
+base_path = "E:\TV\Altered.Caebon\s01"
 
-info_list = thunder_subs.get_sub_info_list(cid, 1000)
-if info_list is None:
-    print("超过最大重试次数后仍然未能获得正确结果")
-else:
-    for i in info_list:
-        print(i)
-'''
-本次输出结果：
-    {'scid': '86AE53FC9D5A2E41E5E9CAB7C1A3794A1B7206B9', 'sname': '神秘博士2011圣诞篇The.Doctor.The.Widow.And.The.Wardrobe.ass', 'language': '简体', 'rate': '4', 'surl': 'http://subtitle.v.geilijiasu.com/86/AE/86AE53FC9D5A2E41E5E9CAB7C1A3794A1B7206B9.ass', 'svote': 545, 'roffset': 4114797192}
-    {'scid': '6D314FF209BCDF94390429D5826314B7DC4CFF4C', 'sname': 'doctor_who_2005.christmas_special_2011.the_doctor_the_widow_and_the_wardrobe.720p_hdtv_x264-fov.srt', 'language': '简体&英语', 'rate': '3', 'surl': 'http://subtitle.v.geilijiasu.com/6D/31/6D314FF209BCDF94390429D5826314B7DC4CFF4C.srt', 'svote': 120, 'roffset': 4114797192}
-    {'scid': '833D79CD8D9C97190DFC6DED38603D0F1AB13989', 'sname': '第六季doctor_who_2005.christmas_special_2011.the_doctor_the_widow_and_the_wardrobe.720p_hdtv_x264-fov.eng1.srt', 'language': '英语', 'rate': '3', 'surl': 'http://subtitle.v.geilijiasu.com/83/3D/833D79CD8D9C97190DFC6DED38603D0F1AB13989.srt', 'svote': 97, 'roffset': 4114797192}
-    {'scid': '49D8C936BE2920D1F5BA9FCD499689FBF0AC6706', 'sname': '', 'language': '简体', 'rate': '3', 'surl': 'http://subtitle.v.geilijiasu.com/49/D8/49D8C936BE2920D1F5BA9FCD499689FBF0AC6706.srt', 'svote': 56, 'roffset': 4114797192}
-    {'scid': 'C8BE7928FCB62A0E49F1702D7DADDB90D98F02B4', 'sname': 'Doctor.Who.2005.Christmas.Special.2011.The.Doctor.The.Widow.And.The.Wardrobe.720p.HDTV.x264-FoV.srt', 'language': '英语', 'rate': '1', 'surl': 'http://subtitle.v.geilijiasu.com/C8/BE/C8BE7928FCB62A0E49F1702D7DADDB90D98F02B4.srt', 'svote': 7, 'roffset': 4114797192}
-    {'scid': '8F6572265A069E77EDA4EB1AED88EA616F232809', 'sname': 'DW博士之时 上半部 - 副本.CHS&EN.ass', 'language': '简体&英语', 'rate': '0', 'surl': 'http://subtitle.v.geilijiasu.com/8F/65/8F6572265A069E77EDA4EB1AED88EA616F232809.ass', 'svote': 1, 'roffset': 4114797192}
-    {'scid': '8F94F0C457A2E87AB344C00239F5FB229E650481', 'sname': 'Downton Abbey / 唐顿庄园@@Downton Abbey - 02x10 - Christmas Specia1.srt', 'language': '简体&英语', 'rate': '0', 'surl': 'http://subtitle.v.geilijiasu.com/8F/94/8F94F0C457A2E87AB344C00239F5FB229E650481.srt', 'svote': 1, 'roffset': 4114797192}
-    {'scid': 'E0B4E327DC1AEE5408A6ACDABE3B7998D94A15D0', 'sname': 'Doctor.Who.2005.S07E07.The.Rings.Of.Akhaten.720p.HDTV.x264-FoV.srt', 'language': '简体&英语', 'rate': '0', 'surl': 'http://subtitle.v.geilijiasu.com/E0/B4/E0B4E327DC1AEE5408A6ACDABE3B7998D94A15D0.srt', 'svote': 1, 'roffset': 4114797192}
-    {'scid': 'FAFDF91FF46183E342EE8FF7D43FB99FC5511A54', 'sname': '', 'language': '简体', 'rate': '0', 'surl': 'http://subtitle.v.geilijiasu.com/FA/FD/FAFDF91FF46183E342EE8FF7D43FB99FC5511A54.ass', 'svote': 2, 'roffset': 4114797192}
-    {'scid': '8DEFC8CE8396B455810B694F3204D5C95EC930B3', 'sname': 'Doctor.Who.2005.S05.Special.A.Christmas.Carol.2010.Special.BDRip.XviD-HAGGiS.srt', 'language': '英语', 'rate': '0', 'surl': 'http://subtitle.v.geilijiasu.com/8D/EF/8DEFC8CE8396B455810B694F3204D5C95EC930B3.srt', 'svote': 4, 'roffset': 4114797192}
+def is_video_file(filename):
+    video_file_extensions = (
+'.264', '.3g2', '.3gp', '.3gp2', '.3gpp', '.3gpp2', '.3mm', '.3p2', '.60d', '.787', '.89', '.aaf', '.aec', '.aep', '.aepx',
+'.aet', '.aetx', '.ajp', '.ale', '.am', '.amc', '.amv', '.amx', '.anim', '.aqt', '.arcut', '.arf', '.asf', '.asx', '.avb',
+'.avc', '.avd', '.avi', '.avp', '.avs', '.avs', '.avv', '.axm', '.bdm', '.bdmv', '.bdt2', '.bdt3', '.bik', '.bin', '.bix',
+'.bmk', '.bnp', '.box', '.bs4', '.bsf', '.bvr', '.byu', '.camproj', '.camrec', '.camv', '.ced', '.cel', '.cine', '.cip',
+'.clpi', '.cmmp', '.cmmtpl', '.cmproj', '.cmrec', '.cpi', '.cst', '.cvc', '.cx3', '.d2v', '.d3v', '.dat', '.dav', '.dce',
+'.dck', '.dcr', '.dcr', '.ddat', '.dif', '.dir', '.divx', '.dlx', '.dmb', '.dmsd', '.dmsd3d', '.dmsm', '.dmsm3d', '.dmss',
+'.dmx', '.dnc', '.dpa', '.dpg', '.dream', '.dsy', '.dv', '.dv-avi', '.dv4', '.dvdmedia', '.dvr', '.dvr-ms', '.dvx', '.dxr',
+'.dzm', '.dzp', '.dzt', '.edl', '.evo', '.eye', '.ezt', '.f4p', '.f4v', '.fbr', '.fbr', '.fbz', '.fcp', '.fcproject',
+'.ffd', '.flc', '.flh', '.fli', '.flv', '.flx', '.gfp', '.gl', '.gom', '.grasp', '.gts', '.gvi', '.gvp', '.h264', '.hdmov',
+'.hkm', '.ifo', '.imovieproj', '.imovieproject', '.ircp', '.irf', '.ism', '.ismc', '.ismv', '.iva', '.ivf', '.ivr', '.ivs',
+'.izz', '.izzy', '.jss', '.jts', '.jtv', '.k3g', '.kmv', '.ktn', '.lrec', '.lsf', '.lsx', '.m15', '.m1pg', '.m1v', '.m21',
+'.m21', '.m2a', '.m2p', '.m2t', '.m2ts', '.m2v', '.m4e', '.m4u', '.m4v', '.m75', '.mani', '.meta', '.mgv', '.mj2', '.mjp',
+'.mjpg', '.mk3d', '.mkv', '.mmv', '.mnv', '.mob', '.mod', '.modd', '.moff', '.moi', '.moov', '.mov', '.movie', '.mp21',
+'.mp21', '.mp2v', '.mp4', '.mp4v', '.mpe', '.mpeg', '.mpeg1', '.mpeg4', '.mpf', '.mpg', '.mpg2', '.mpgindex', '.mpl',
+'.mpl', '.mpls', '.mpsub', '.mpv', '.mpv2', '.mqv', '.msdvd', '.mse', '.msh', '.mswmm', '.mts', '.mtv', '.mvb', '.mvc',
+'.mvd', '.mve', '.mvex', '.mvp', '.mvp', '.mvy', '.mxf', '.mxv', '.mys', '.ncor', '.nsv', '.nut', '.nuv', '.nvc', '.ogm',
+'.ogv', '.ogx', '.osp', '.otrkey', '.pac', '.par', '.pds', '.pgi', '.photoshow', '.piv', '.pjs', '.playlist', '.plproj',
+'.pmf', '.pmv', '.pns', '.ppj', '.prel', '.pro', '.prproj', '.prtl', '.psb', '.psh', '.pssd', '.pva', '.pvr', '.pxv',
+'.qt', '.qtch', '.qtindex', '.qtl', '.qtm', '.qtz', '.r3d', '.rcd', '.rcproject', '.rdb', '.rec', '.rm', '.rmd', '.rmd',
+'.rmp', '.rms', '.rmv', '.rmvb', '.roq', '.rp', '.rsx', '.rts', '.rts', '.rum', '.rv', '.rvid', '.rvl', '.sbk', '.sbt',
+'.scc', '.scm', '.scm', '.scn', '.screenflow', '.sec', '.sedprj', '.seq', '.sfd', '.sfvidcap', '.siv', '.smi', '.smi',
+'.smil', '.smk', '.sml', '.smv', '.spl', '.sqz', '.srt', '.ssf', '.ssm', '.stl', '.str', '.stx', '.svi', '.swf', '.swi',
+'.swt', '.tda3mt', '.tdx', '.thp', '.tivo', '.tix', '.tod', '.tp', '.tp0', '.tpd', '.tpr', '.trp', '.ts', '.tsp', '.ttxt',
+'.tvs', '.usf', '.usm', '.vc1', '.vcpf', '.vcr', '.vcv', '.vdo', '.vdr', '.vdx', '.veg','.vem', '.vep', '.vf', '.vft',
+'.vfw', '.vfz', '.vgz', '.vid', '.video', '.viewlet', '.viv', '.vivo', '.vlab', '.vob', '.vp3', '.vp6', '.vp7', '.vpj',
+'.vro', '.vs4', '.vse', '.vsp', '.w32', '.wcp', '.webm', '.wlmp', '.wm', '.wmd', '.wmmp', '.wmv', '.wmx', '.wot', '.wp3',
+'.wpl', '.wtv', '.wve', '.wvx', '.xej', '.xel', '.xesc', '.xfl', '.xlmv', '.xmv', '.xvid', '.y4m', '.yog', '.yuv', '.zeg',
+'.zm1', '.zm2', '.zm3', '.zmv'  )
 
-格式化其中一个结果如下：
-    {
-        'scid': '86AE53FC9D5A2E41E5E9CAB7C1A3794A1B7206B9',
-        'sname': '神秘博士2011圣诞篇The.Doctor.The.Widow.And.The.Wardrobe.ass',
-        'language': '简体',
-        'rate': '4',
-        'surl': 'http://subtitle.v.geilijiasu.com/86/AE/86AE53FC9D5A2E41E5E9CAB7C1A3794A1B7206B9.ass',
-        'svote': 545,
-        'roffset': 4114797192
-    }
+    if filename.endswith((video_file_extensions)):
+        return True
 
-每项中需要注意的数据有：
-    scid: 猜测为字幕文件的scid
-    sname: 字幕文件的原始文件名
-    language: 字幕语言
-    surl: 字幕下载地址
-'''
+
+arr = os.listdir(base_path)
+for name in arr:
+    if not is_video_file(name) :
+        continue
+    cid = thunder_subs.cid_hash_file(base_path + "\\" + name)
+
+    info_list = thunder_subs.get_sub_info_list(cid, 1000)
+    if info_list is None:
+        print("超过最大重试次数后仍然未能获得正确结果")
+    else:
+        info_list.sort(key = lambda x: x["rate"], reverse=True)
+        for i in info_list:
+            url = i["surl"]
+            sname = i["sname"]
+            suffix_sname = pathlib.Path(sname).suffix
+            name_with_subtitle_suffix = pathlib.Path(name).with_suffix(suffix_sname)
+            r = requests.get(url)
+            with open(base_path + "\\" + name_with_subtitle_suffix.name , 'wb') as f:
+                f.write(r.content)
+            print(i)
+            break
